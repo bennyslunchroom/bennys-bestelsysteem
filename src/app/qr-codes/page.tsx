@@ -18,9 +18,7 @@ export default async function QrCodesPage() {
         <div>
           <h1 className="text-xl font-bold text-stone-900">QR-codes voor de tafels</h1>
           <p className="text-sm text-stone-500">
-            Basis-URL: <code className="rounded bg-stone-100 px-1">{SITE_URL}</code> — pas
-            NEXT_PUBLIC_SITE_URL aan zodra de site online staat, en genereer dan deze pagina
-            opnieuw.
+            Basis-URL: <code className="rounded bg-stone-100 px-1">{SITE_URL}</code>
           </p>
         </div>
         <a
