@@ -64,12 +64,20 @@ export default function Home() {
             Gezellige lunchroom bekend om verse broodjes, Marokkaanse specialiteiten en
             huisgemaakte smoothies.
           </p>
-          <Link
-            href="/menu"
-            className="mt-8 inline-block rounded-full bg-orange-600 px-8 py-3.5 font-semibold text-white shadow-lg shadow-orange-600/20 transition hover:bg-orange-700"
-          >
-            Bekijk onze menukaart
-          </Link>
+          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <Link
+              href="/menu"
+              className="inline-block rounded-full bg-orange-600 px-8 py-3.5 font-semibold text-white shadow-lg shadow-orange-600/20 transition hover:bg-orange-700"
+            >
+              Bekijk onze menukaart
+            </Link>
+            <Link
+              href="/afhalen"
+              className="inline-block rounded-full border border-amber-950/20 bg-white px-8 py-3.5 font-semibold text-amber-950 transition hover:bg-amber-50"
+            >
+              Bestel voor afhalen
+            </Link>
+          </div>
         </div>
       </section>
 

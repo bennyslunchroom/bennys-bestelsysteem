@@ -3,23 +3,30 @@
 import { supabase } from "@/lib/supabase";
 
 export type PlaceOrderInput = {
-  tableNumber: number;
+  destination: { type: "table"; tableNumber: number } | { type: "pickup"; customerName: string };
   items: { productId: string; quantity: number }[];
 };
 
-export async function placeOrder({ tableNumber, items }: PlaceOrderInput) {
+export async function placeOrder({ destination, items }: PlaceOrderInput) {
   if (items.length === 0) {
     return { error: "Winkelwagen is leeg." };
   }
 
-  const { data: table, error: tableError } = await supabase
-    .from("tables")
-    .select("id")
-    .eq("table_number", tableNumber)
-    .single();
+  let tableId: string | null = null;
 
-  if (tableError || !table) {
-    return { error: "Tafel niet gevonden." };
+  if (destination.type === "table") {
+    const { data: table, error: tableError } = await supabase
+      .from("tables")
+      .select("id")
+      .eq("table_number", destination.tableNumber)
+      .single();
+
+    if (tableError || !table) {
+      return { error: "Tafel niet gevonden." };
+    }
+    tableId = table.id;
+  } else if (!destination.customerName.trim()) {
+    return { error: "Vul je naam in." };
   }
 
   const productIds = items.map((item) => item.productId);
@@ -51,7 +58,12 @@ export async function placeOrder({ tableNumber, items }: PlaceOrderInput) {
 
   const { data: order, error: orderError } = await supabase
     .from("orders")
-    .insert({ table_id: table.id, total })
+    .insert({
+      table_id: tableId,
+      total,
+      order_type: destination.type === "table" ? "dine_in" : "pickup",
+      customer_name: destination.type === "pickup" ? destination.customerName.trim() : null,
+    })
     .select("id")
     .single();
 

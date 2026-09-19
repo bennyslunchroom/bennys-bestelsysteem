@@ -59,7 +59,7 @@ export default function KitchenScreen() {
           className="flex flex-col rounded-xl border border-stone-200 bg-white shadow-sm"
         >
           <div className="flex items-center justify-between rounded-t-xl bg-amber-800 px-4 py-3 text-white">
-            <span className="text-lg font-bold">Tafel {order.tableNumber}</span>
+            <span className="text-lg font-bold">{order.label}</span>
             <span className="text-xs text-amber-100">{timeAgo(order.created_at)}</span>
           </div>
           <div className="flex-1 p-4">

@@ -3,7 +3,7 @@ import { supabase } from "@/lib/supabase";
 export type KitchenOrder = {
   id: string;
   created_at: string;
-  tableNumber: number;
+  label: string;
   items: { quantity: number; productName: string }[];
 };
 
@@ -11,7 +11,7 @@ export async function getNewOrders(): Promise<KitchenOrder[]> {
   const { data, error } = await supabase
     .from("orders")
     .select(
-      "id, created_at, tables ( table_number ), order_items ( quantity, products ( name ) )"
+      "id, created_at, order_type, customer_name, tables ( table_number ), order_items ( quantity, products ( name ) )"
     )
     .eq("status", "new")
     .order("created_at", { ascending: true });
@@ -24,10 +24,14 @@ export async function getNewOrders(): Promise<KitchenOrder[]> {
       quantity: number;
       products: { name: string } | null;
     }[];
+    const label =
+      order.order_type === "pickup"
+        ? `Afhalen — ${order.customer_name ?? "Onbekend"}`
+        : `Tafel ${table?.table_number ?? "?"}`;
     return {
       id: order.id,
       created_at: order.created_at,
-      tableNumber: table?.table_number ?? 0,
+      label,
       items: items.map((item) => ({
         quantity: item.quantity,
         productName: item.products?.name ?? "Onbekend gerecht",

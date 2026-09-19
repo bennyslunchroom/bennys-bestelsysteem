@@ -6,14 +6,21 @@ import { formatPrice } from "@/lib/format";
 import { placeOrder } from "@/app/actions/orders";
 import type { Category } from "@/lib/types";
 
+type Destination =
+  | { type: "table"; tableNumber: number }
+  | { type: "pickup" };
+
 export default function OrderMenu({
   categories,
-  tableNumber,
+  destination,
+  redirectAfterOrder,
 }: {
   categories: Category[];
-  tableNumber: number;
+  destination: Destination;
+  redirectAfterOrder?: string;
 }) {
   const [quantities, setQuantities] = useState<Record<string, number>>({});
+  const [customerName, setCustomerName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
@@ -45,22 +52,50 @@ export default function OrderMenu({
 
   function handleOrder() {
     setError(null);
+
+    if (destination.type === "pickup" && !customerName.trim()) {
+      setError("Vul je naam in.");
+      return;
+    }
+
     startTransition(async () => {
       const result = await placeOrder({
-        tableNumber,
+        destination:
+          destination.type === "table"
+            ? { type: "table", tableNumber: destination.tableNumber }
+            : { type: "pickup", customerName },
         items: cartItems.map(({ productId, quantity }) => ({ productId, quantity })),
       });
-      if (result.error) {
-        setError(result.error);
+      if (result.error || !result.orderId) {
+        setError(result.error ?? "Er ging iets mis.");
         return;
       }
-      router.push(`/tafel/${tableNumber}/bevestigd/${result.orderId}`);
+      const path = redirectAfterOrder
+        ? redirectAfterOrder
+        : destination.type === "table"
+          ? `/tafel/${destination.tableNumber}/bevestigd/${result.orderId}`
+          : `/afhalen/bevestigd/${result.orderId}`;
+      router.push(path);
     });
   }
 
   return (
     <>
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-6 pb-32">
+        {destination.type === "pickup" && (
+          <div className="mb-6 rounded-xl border border-stone-200 bg-white p-4">
+            <label className="mb-1 block text-sm font-medium text-stone-700">
+              Je naam (voor bij het ophalen)
+            </label>
+            <input
+              type="text"
+              value={customerName}
+              onChange={(e) => setCustomerName(e.target.value)}
+              className="w-full rounded-lg border border-stone-300 px-3 py-2"
+              placeholder="Bijv. Fatima"
+            />
+          </div>
+        )}
         {categories.map((category) => (
           <section key={category.id} className="mb-8">
             <h2 className="mb-3 text-lg font-bold uppercase tracking-wide text-amber-900">

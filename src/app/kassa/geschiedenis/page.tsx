@@ -39,7 +39,7 @@ export default async function KassaGeschiedenisPage() {
           {orders.map((order) => (
             <div key={order.id} className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
               <div className="mb-2 flex items-center justify-between">
-                <span className="font-bold text-amber-900">Tafel {order.tableNumber}</span>
+                <span className="font-bold text-amber-900">{order.label}</span>
                 <span className="text-sm text-stone-400">{formatTime(order.createdAt)}</span>
               </div>
               <ul className="flex flex-col gap-1 text-sm text-stone-700">

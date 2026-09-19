@@ -1,42 +1,46 @@
 import { supabase } from "@/lib/supabase";
 import { createClient as createBrowserClient } from "@/lib/supabase/client";
 
-export type OpenTable = {
-  tableNumber: number;
+export type OpenBill = {
+  key: string;
+  label: string;
   orderIds: string[];
   items: { quantity: number; productName: string; unitPrice: number }[];
   total: number;
-  oldestOrderAt: string;
 };
 
-export async function getOpenTables(): Promise<OpenTable[]> {
+export async function getOpenTables(): Promise<OpenBill[]> {
   const { data, error } = await supabase
     .from("orders")
     .select(
-      "id, created_at, total, tables ( table_number ), order_items ( quantity, unit_price, products ( name ) )"
+      "id, created_at, total, order_type, customer_name, tables ( table_number ), order_items ( quantity, unit_price, products ( name ) )"
     )
     .in("status", ["new", "ready"])
     .order("created_at", { ascending: true });
 
   if (error) throw new Error(error.message);
 
-  const byTable = new Map<number, OpenTable>();
+  const byKey = new Map<string, OpenBill>();
 
   for (const order of data ?? []) {
     const table = order.tables as unknown as { table_number: number } | null;
-    const tableNumber = table?.table_number ?? 0;
+    const isPickup = order.order_type === "pickup";
+    const key = isPickup ? `pickup-${order.id}` : `table-${table?.table_number ?? 0}`;
+    const label = isPickup
+      ? `Afhalen — ${order.customer_name ?? "Onbekend"}`
+      : `Tafel ${table?.table_number ?? "?"}`;
     const items = order.order_items as unknown as {
       quantity: number;
       unit_price: number;
       products: { name: string } | null;
     }[];
 
-    const existing: OpenTable = byTable.get(tableNumber) ?? {
-      tableNumber,
+    const existing: OpenBill = byKey.get(key) ?? {
+      key,
+      label,
       orderIds: [],
       items: [],
       total: 0,
-      oldestOrderAt: order.created_at,
     };
 
     existing.orderIds.push(order.id);
@@ -49,16 +53,16 @@ export async function getOpenTables(): Promise<OpenTable[]> {
       }))
     );
 
-    byTable.set(tableNumber, existing);
+    byKey.set(key, existing);
   }
 
-  return Array.from(byTable.values()).sort((a, b) => a.tableNumber - b.tableNumber);
+  return Array.from(byKey.values()).sort((a, b) => a.label.localeCompare(b.label));
 }
 
 export type PaidOrder = {
   id: string;
   createdAt: string;
-  tableNumber: number;
+  label: string;
   items: { quantity: number; productName: string; unitPrice: number }[];
   total: number;
 };
@@ -70,7 +74,7 @@ export async function getPaidOrdersToday(): Promise<PaidOrder[]> {
   const { data, error } = await supabase
     .from("orders")
     .select(
-      "id, created_at, total, tables ( table_number ), order_items ( quantity, unit_price, products ( name ) )"
+      "id, created_at, total, order_type, customer_name, tables ( table_number ), order_items ( quantity, unit_price, products ( name ) )"
     )
     .eq("status", "paid")
     .gte("created_at", startOfToday.toISOString())
@@ -80,6 +84,7 @@ export async function getPaidOrdersToday(): Promise<PaidOrder[]> {
 
   return (data ?? []).map((order) => {
     const table = order.tables as unknown as { table_number: number } | null;
+    const isPickup = order.order_type === "pickup";
     const items = order.order_items as unknown as {
       quantity: number;
       unit_price: number;
@@ -89,7 +94,9 @@ export async function getPaidOrdersToday(): Promise<PaidOrder[]> {
     return {
       id: order.id,
       createdAt: order.created_at,
-      tableNumber: table?.table_number ?? 0,
+      label: isPickup
+        ? `Afhalen — ${order.customer_name ?? "Onbekend"}`
+        : `Tafel ${table?.table_number ?? "?"}`,
       total: order.total,
       items: items.map((item) => ({
         quantity: item.quantity,
