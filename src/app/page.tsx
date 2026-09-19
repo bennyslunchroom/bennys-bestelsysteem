@@ -1,8 +1,5 @@
 import { getMenu } from "@/lib/menu";
-
-function formatPrice(price: number) {
-  return `€ ${price.toFixed(2).replace(".", ",")}`;
-}
+import { formatPrice } from "@/lib/format";
 
 export default async function Home() {
   const categories = await getMenu();
