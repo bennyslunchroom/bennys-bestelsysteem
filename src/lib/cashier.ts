@@ -55,6 +55,51 @@ export async function getOpenTables(): Promise<OpenTable[]> {
   return Array.from(byTable.values()).sort((a, b) => a.tableNumber - b.tableNumber);
 }
 
+export type PaidOrder = {
+  id: string;
+  createdAt: string;
+  tableNumber: number;
+  items: { quantity: number; productName: string; unitPrice: number }[];
+  total: number;
+};
+
+export async function getPaidOrdersToday(): Promise<PaidOrder[]> {
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+
+  const { data, error } = await supabase
+    .from("orders")
+    .select(
+      "id, created_at, total, tables ( table_number ), order_items ( quantity, unit_price, products ( name ) )"
+    )
+    .eq("status", "paid")
+    .gte("created_at", startOfToday.toISOString())
+    .order("created_at", { ascending: false });
+
+  if (error) throw new Error(error.message);
+
+  return (data ?? []).map((order) => {
+    const table = order.tables as unknown as { table_number: number } | null;
+    const items = order.order_items as unknown as {
+      quantity: number;
+      unit_price: number;
+      products: { name: string } | null;
+    }[];
+
+    return {
+      id: order.id,
+      createdAt: order.created_at,
+      tableNumber: table?.table_number ?? 0,
+      total: order.total,
+      items: items.map((item) => ({
+        quantity: item.quantity,
+        productName: item.products?.name ?? "Onbekend gerecht",
+        unitPrice: item.unit_price,
+      })),
+    };
+  });
+}
+
 export async function settleTable(orderIds: string[]) {
   const browserClient = createBrowserClient();
   const { error } = await browserClient
