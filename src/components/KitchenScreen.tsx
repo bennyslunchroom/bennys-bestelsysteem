@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
+import { createClient as createBrowserClient } from "@/lib/supabase/client";
 import { getNewOrders, type KitchenOrder } from "@/lib/kitchen";
 
 function timeAgo(createdAt: string) {
@@ -34,7 +35,11 @@ export default function KitchenScreen() {
 
   async function markReady(orderId: string) {
     setOrders((prev) => prev.filter((o) => o.id !== orderId));
-    const { error } = await supabase.from("orders").update({ status: "ready" }).eq("id", orderId);
+    const browserClient = createBrowserClient();
+    const { error } = await browserClient
+      .from("orders")
+      .update({ status: "ready" })
+      .eq("id", orderId);
     if (error) {
       console.error(error);
       refresh();

@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase";
+import { createClient as createBrowserClient } from "@/lib/supabase/client";
 
 export type OpenTable = {
   tableNumber: number;
@@ -55,6 +56,10 @@ export async function getOpenTables(): Promise<OpenTable[]> {
 }
 
 export async function settleTable(orderIds: string[]) {
-  const { error } = await supabase.from("orders").update({ status: "paid" }).in("id", orderIds);
+  const browserClient = createBrowserClient();
+  const { error } = await browserClient
+    .from("orders")
+    .update({ status: "paid" })
+    .in("id", orderIds);
   if (error) throw new Error(error.message);
 }
