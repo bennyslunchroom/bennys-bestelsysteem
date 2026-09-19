@@ -13,7 +13,7 @@ export default function KassaPage() {
               Geschiedenis van vandaag
             </Link>
             <Link href="/kassa/nieuwe-bestelling" className="text-sm text-amber-100 underline">
-              + Nieuwe afhaalbestelling
+              + Nieuwe bestelling
             </Link>
           </div>
         </div>
